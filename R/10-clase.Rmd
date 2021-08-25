@@ -55,7 +55,8 @@ pacman::p_load(sjmisc,
                tidyverse,
                haven,
                dplyr,
-               summarytools)
+               summarytools,
+               sjPlot)
 ```
 
 La librería `texreg`, si bien está disponible en CRAN (de donde se descargan e instalan los paquetes por defecto), tal versión no nos permite usar el argumento `custom.gof.rows`, que nos permite incorporar estadísticos de ajuste adicionales. Por ello, la instalaremos directamente desde _GitHub_
