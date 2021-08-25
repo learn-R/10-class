@@ -1,0 +1,28 @@
+{
+    "id": "2792BE5A",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1629861073411.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "id": "429c8d1f5941423bb00d8f3e9215468c",
+        "name": "modelo",
+        "title": "modelo",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1629860952,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1629861073411,
+    "read_only": false,
+    "read_only_alternatives": []
+}

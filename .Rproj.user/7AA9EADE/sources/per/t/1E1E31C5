@@ -1,0 +1,28 @@
+{
+    "id": "1E1E31C5",
+    "path": null,
+    "project_path": null,
+    "type": "object_explorer",
+    "hash": "0",
+    "contents": "",
+    "dirty": false,
+    "created": 1629925394885.0,
+    "source_on_save": false,
+    "relative_order": 3,
+    "properties": {
+        "id": "219a22afa9054e76b686bae02cfe6598",
+        "name": "or",
+        "title": "or",
+        "language": "R",
+        "source_window_id": "",
+        "Source": "Source"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1629860952,
+    "encoding": "",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1629925394885,
+    "read_only": false,
+    "read_only_alternatives": []
+}
