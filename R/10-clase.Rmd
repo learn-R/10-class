@@ -7,7 +7,7 @@ menu:
     parent: Ejemplos
     weight: 10
 type: docs
-toc: true
+toc: yes
 editor_options: 
   chunk_output_type: console
 ---
@@ -127,7 +127,7 @@ datos$educacion <- factor(datos$educacion, levels = c('Nunca estudió',
 
 ## 5.1. Creación de variable dependiente dicotómica
 
-Como señalamos al inicio del práctico, la **variable dependiente** de este modelo de regresión logística será una dicotomización de la variable ingresos. Esta se construirá codificando como `1` a todas aquellas personas cuyos ingresos sean mayores a la media de ingresos, y como `0` a todas las otras personas. Para ello, emplearemos la función `ifelse()` del paquete `base` de R, a modo de generar una variable condicional a partir de lo anteriormente. 
+Como señalamos al inicio del práctico, la **variable dependiente** de este modelo de regresión logística será una dicotomización de la variable ingresos. Esta se construirá codificando como `1` a todas aquellas personas cuyos ingresos sean mayores a la media de ingresos, y como `0` a todas las otras personas. Para ello, emplearemos la función `ifelse()` del paquete `base` de R, a modo de generar una variable condicional a partir de lo anteriormente. Empleamos la función `factor()` para transformarla en tal tipo de dato.
 
 ```{r crear-dependiente, echo=T}
 datos$ingresos_d <- ifelse(datos$ingresos>mean(datos$ingresos), 1, 0)
@@ -143,7 +143,7 @@ print(dfSummary(datos, headings = FALSE, method = "render")) #Visualización en 
 ```
 
 ```{r descriptivo-view, echo=T, message=FALSE}
-dfSummary(datos, headings = FALSE, method = "render") #Formato HTML
+view(dfSummary(datos, headings = FALSE, method = "render")) #Formato HTML
 ```
 
 Podemos ver que la media de la variable `ingresos` es 162.615.6. Asimismo, las categorías con mayor frecuencia en `educacion` son Educación primaria (30.4%) y Educación secundaria (36.2%). En la muestra, por otra parte, hay más mujeres (53%) que hombres (47%). Por su parte, la media de `edad` son 39.3 años. Por último, el 75.9% de las personas tiene ingresos menores o iguales al ingreso medio, mientras que un 24.1% percibe ingresos superiores al ingreso medio. 

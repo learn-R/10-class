@@ -170,7 +170,7 @@ pre code {
 </div>
 
 <div id="TOC">
-true
+yes
 </div>
 
 <div id="objetivos-del-práctico" class="section level2">
@@ -329,45 +329,13 @@ datos$educacion &lt;- factor(datos$educacion, levels = c(&#39;Nunca estudió&#39
 </div>
 <div id="creación-de-variable-dependiente-dicotómica" class="section level2">
 <h2>5.1. Creación de variable dependiente dicotómica</h2>
-<p>Como señalamos al inicio del práctico, la <strong>variable dependiente</strong> de este modelo de regresión logística será una dicotomización de la variable ingresos. Esta se construirá codificando como <code>1</code> a todas aquellas personas cuyos ingresos sean mayores a la media de ingresos, y como <code>0</code> a todas las otras personas. Para ello, emplearemos la función <code>ifelse()</code> del paquete <code>base</code> de R, a modo de generar una variable condicional a partir de lo anteriormente.</p>
+<p>Como señalamos al inicio del práctico, la <strong>variable dependiente</strong> de este modelo de regresión logística será una dicotomización de la variable ingresos. Esta se construirá codificando como <code>1</code> a todas aquellas personas cuyos ingresos sean mayores a la media de ingresos, y como <code>0</code> a todas las otras personas. Para ello, emplearemos la función <code>ifelse()</code> del paquete <code>base</code> de R, a modo de generar una variable condicional a partir de lo anteriormente. Empleamos la función <code>factor()</code> para transformarla en tal tipo de dato.</p>
 <pre class="r"><code>datos$ingresos_d &lt;- ifelse(datos$ingresos&gt;mean(datos$ingresos), 1, 0)</code></pre>
 </div>
 <div id="análisis-descriptivos" class="section level2">
 <h2>6. Análisis descriptivos</h2>
 <p>Una vez que tengamos recodificadas las variables, debemos proceder con un análisis descriptivo de los datos. Para ello, emplaremos la función <code>dfSummary()</code> de la librería <code>summarytools</code>, que nos permite crear una tabla descriptiva para todas las variables de nuestro set de datos.</p>
-<pre class="r"><code>dfSummary(datos, headings = FALSE, method = &quot;render&quot;) #Formato HTML</code></pre>
-<pre><code>## 
-## -------------------------------------------------------------------------------------------------------------------------------------------------------
-## No   Variable     Label                               Stats / Values                    Freqs (% of Valid)     Graph               Valid      Missing  
-## ---- ------------ ----------------------------------- --------------------------------- ---------------------- ------------------- ---------- ---------
-## 1    ingresos     Total ingresos sueldos y salarios   Mean (sd) : 162615.6 (411296.6)   2779 distinct values   :                   71935      0        
-##      [numeric]                                        min &lt; med &lt; max:                                         :                   (100.0%)   (0.0%)   
-##                                                       0 &lt; 0 &lt; 9312239                                          :                                       
-##                                                       IQR (CV) : 80105.3 (2.5)                                 :                                       
-##                                                                                                                :                                       
-## 
-## 2    educacion                                        1. Nunca estudió                   3603 ( 5.1%)          I                   71346      589      
-##      [factor]                                         2. Educación preescolar            2814 ( 3.9%)                              (99.2%)    (0.8%)   
-##                                                       3. Educación primaria             21673 (30.4%)          IIIIII                                  
-##                                                       4. Educación secundaria           25834 (36.2%)          IIIIIII                                 
-##                                                       5. Educación técnica               6327 ( 8.9%)          I                                       
-##                                                       6. Educación universitaria        10276 (14.4%)          II                                      
-##                                                       7. Postitulos y maestría            720 ( 1.0%)                                                  
-##                                                       8. Doctorado                         99 ( 0.1%)                                                  
-## 
-## 3    sexo         Sexo                                1. Hombre                         33830 (47.0%)          IIIIIIIII           71935      0        
-##      [factor]                                         2. Mujer                          38105 (53.0%)          IIIIIIIIII          (100.0%)   (0.0%)   
-## 
-## 4    edad         Edad de la persona                  Mean (sd) : 39.3 (23.1)           107 distinct values      : .   . .         71935      0        
-##      [numeric]                                        min &lt; med &lt; max:                                         : : : : : : .       (100.0%)   (0.0%)   
-##                                                       0 &lt; 39 &lt; 106                                             : : : : : : :                           
-##                                                       IQR (CV) : 39 (0.6)                                      : : : : : : : .                         
-##                                                                                                                : : : : : : : : .                       
-## 
-## 5    ingresos_d                                       Min  : 0                          0 : 54630 (75.9%)      IIIIIIIIIIIIIII     71935      0        
-##      [numeric]                                        Mean : 0.2                        1 : 17305 (24.1%)      IIII                (100.0%)   (0.0%)   
-##                                                       Max  : 1                                                                                         
-## -------------------------------------------------------------------------------------------------------------------------------------------------------</code></pre>
+<pre class="r"><code>view(dfSummary(datos, headings = FALSE, method = &quot;render&quot;)) #Formato HTML</code></pre>
 <p>Podemos ver que la media de la variable <code>ingresos</code> es 162.615.6. Asimismo, las categorías con mayor frecuencia en <code>educacion</code> son Educación primaria (30.4%) y Educación secundaria (36.2%). En la muestra, por otra parte, hay más mujeres (53%) que hombres (47%). Por su parte, la media de <code>edad</code> son 39.3 años. Por último, el 75.9% de las personas tiene ingresos menores o iguales al ingreso medio, mientras que un 24.1% percibe ingresos superiores al ingreso medio.</p>
 </div>
 <div id="creación-del-modelo" class="section level2">
