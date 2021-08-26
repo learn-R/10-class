@@ -70,7 +70,7 @@ library(texreg)
 
 Como se señaló anteriormente, en este práctico se trabajará con los datos de la **Encuesta Suplementaria de Ingresos (ESI)** en su versión 2020. Esta se encuentra en la carpeta "input/data", en formato .rds, habiendo sido procesada anteriormente. Por ello, empleamos la función `readRDS()` de la librería `base` de R.
 
-```{r read_dta, echo=TRUE}
+```{r readRDS, echo=TRUE}
 datos <- readRDS("../input/data/datos_proc.rds")
 ```
 
@@ -138,8 +138,12 @@ datos$ingresos_d <- ifelse(datos$ingresos>mean(datos$ingresos), 1, 0)
 
 Una vez que tengamos recodificadas las variables, debemos proceder con un análisis descriptivo de los datos. Para ello, emplaremos la función `dfSummary()` de la librería `summarytools`, que nos permite crear una tabla descriptiva para todas las variables de nuestro set de datos.
 
-```{r descriptivo, echo=T, message=F}
-view(dfSummary(datos, headings = FALSE, method = "render"))
+```{r descriptivo-print, echo=T, message=F, include=F}
+print(dfSummary(datos, headings = FALSE, method = "render")) #Visualización en consola
+```
+
+```{r descriptivo-view, echo=T, message=FALSE}
+dfSummary(datos, headings = FALSE, method = "render") #Formato HTML
 ```
 
 Podemos ver que la media de la variable `ingresos` es 162.615.6. Asimismo, las categorías con mayor frecuencia en `educacion` son Educación primaria (30.4%) y Educación secundaria (36.2%). En la muestra, por otra parte, hay más mujeres (53%) que hombres (47%). Por su parte, la media de `edad` son 39.3 años. Por último, el 75.9% de las personas tiene ingresos menores o iguales al ingreso medio, mientras que un 24.1% percibe ingresos superiores al ingreso medio. 
@@ -157,7 +161,7 @@ Como podemos ver, se ha creado en nuestro entorno (Environment) un objeto llamad
 
 ## 8. Visualización del modelo
 
-A continuación, visualizaremos el modelo con el comando `tab_model()` de la librería `sjPlot`. Por defecto, para las medidas de ajuste, se emplea el R^^2 de Tjur (Pseudo-R^^2)
+A continuación, visualizaremos el modelo con el comando `tab_model()` de la librería `sjPlot`. Por defecto, para las medidas de ajuste, se presenta el R^^2 de Tjur (Pseudo-R^^2)
 
 ```{r tabla, results= 'asis', echo=T, message=F}
 sjPlot::tab_model(modelo, 
@@ -184,54 +188,38 @@ Volvemos a generar y visualizar el modelo, creando un nuevo objeto llamado `mode
 
 ```{r modelo-relevel, results= 'asis', echo=T, message=F}
 modelo_r <- glm(ingresos_d~educacion+sexo+edad, data = datos, family = "binomial")
-htmlreg(list(modelo, modelo_r))
+sjPlot::tab_model(list(modelo, modelo_r), 
+                  show.ci=FALSE, 
+                  p.style = "stars", 
+                  dv.labels = "Modelo",
+                  string.pred = "Predictores", 
+                  string.est = "β")
 ```
 
-Podemos darnos cuenta de que el _output_ de este código incluye a ambos modelos, uno junto a otro. Las tablas generadas con `htmlreg()` incluyen cada uno de los coeficientes y sus niveles de significancia estadística (señalados con asteriscos *), así como distintas medidas de ajuste como _AIC_ o _Log Likelihood_. 
-
-### Control estadístico
-
-En general, nuestra interpretación la elaboraremos centrándonos en la **significancia estadística** de nuestros coeficientes. Para ello, podemos graficar la significancia estadística con la función `plot_model()` del paquete `sjPlot`
-
-```{r sig-est, echo=T}
-plot_model(modelo, show.values = TRUE)+ theme_sjplot()
-```
+Podemos darnos cuenta de que el _output_ de este código incluye a ambos modelos, uno junto a otro. Las tablas generadas con `tab_model()` incluyen cada uno de los coeficientes y sus niveles de significancia estadística (señalados con asteriscos *), así como el pseudo R^^2 de Tjur.
 
 ## 11. Exponenciación de los coeficientes
 
-No obstante, por defecto el comando `glm()` arroja los coeficientes como **logaritmos de las chanches** (Log-odds). Así, extraemos las log-odds de nuestro modelo, y luego las exponenciamos con la función `exp()` para transformarlas en odds-ratio:
+No obstante, por defecto el comando `tab_model()` arroja los coeficientes como **logaritmos de las chanches** (Log-odds), lo cual dificulta la interpretación de los coeficientes. Para que el output de la tabla se presente como **Odds-ratio**, debemos especificar el argumento `transform = "exp"` 
 
-```{r log-odds, echo=T}
-or <- texreg::extract(modelo)
-or@coef <- exp(or@coef)
+
+```{r tabla-odds, results= 'asis', echo=T, message=F}
+sjPlot::tab_model(modelo,
+                  transform = "exp",
+                  show.ci=FALSE,
+                  p.style = "stars",
+                  dv.labels = c("Modelo"," Modelo (OR)"),
+                  string.pred = "Predictores",
+                  string.est = "β")
 ```
 
-```{r tabla, results= 'asis', echo=T, message=F}
-# sjPlot::tab_model(list(modelo, or), 
-#                   show.ci=FALSE, 
-#                   p.style = "stars", 
-#                   dv.labels = c("Modelo"," Modelo (OR)"),
-#                   string.pred = "Predictores", 
-#                   string.est = "β")
-```
-
-Y, por último, visualizamos la tabla con nuestro modelo en log-odds y odds ratio (chances)en formado html con la función `htmlreg()` de la librería `texreg`
-
-``` {r modelo-or, results= 'asis', echo=T}
-htmlreg(l = list(modelo, or), doctype = F, 
-        caption = "", caption.above = T, 
-        custom.model.names = c("Modelo", "Modelo (OR)"), 
-        ci.force = c(TRUE, TRUE), override.coef = list(coef(modelo), or@coef), 
-        custom.note = "$^{***}$ p < 0.001; $^{**}$ p < 0.01; $^{*}$ p < 0.05 <br> Errores estándar entre paréntesis. <br> **Nota**: La significancia estadística de los coeficientes en unidades de Odds ratio está calculada en base a los valores $t$, <br> los cuales a su vez se calculan en base a $log(Odds)/SE$")
-
-```
-
-También podemos graficar la significancia estadística de nuestros coeficientes, con `plot_model()` de `sjPlot`
+También podemos graficar la significancia estadística de nuestros coeficientes, con `plot_model()` de `sjPlot`. Por defecto, esta función presenta los coeficientes como Odds-ratio
 
 ```{r plot-sig, echo=T}
-#plot_model(list(modelo, or), show.values = TRUE)+ theme_sjplot()
+plot_model(modelo,
+           show.values = TRUE)+ 
+  theme_sjplot()
 ```
-
 
 ## 10. Medidas de ajuste
 
