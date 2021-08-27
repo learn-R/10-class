@@ -26,7 +26,7 @@ Este práctico fue elaborado con datos de la [**Encuesta Suplementaria de Ingres
 
 ## 2. Librerías a utilizar
 
-En este práctico utilizaremos cuatro paquetes
+En este práctico utilizaremos seis paquetes
 
 1. `pacman`: este facilita y agiliza la lectura de los paquetes a utilizar en R
 
@@ -38,11 +38,7 @@ En este práctico utilizaremos cuatro paquetes
 
 5. `dplyr`: nos permite seleccionar variables de un set de datos
 
-6. `texreg`: nos permite construir tablas de regresión en RMarkdown
-
-7. `summarytools`: para hacer tablas descriptivas
-
-8. `sjPlot`: para construir tablas y gráficos
+6. `sjPlot`: para construir tablas y gráficos
 
 # Pasos del procesamiento
 
@@ -55,15 +51,7 @@ pacman::p_load(sjmisc,
                tidyverse,
                haven,
                dplyr,
-               summarytools,
                sjPlot)
-```
-
-La librería `texreg`, si bien está disponible en CRAN (de donde se descargan e instalan los paquetes por defecto), tal versión no nos permite usar el argumento `custom.gof.rows`, que nos permite incorporar estadísticos de ajuste adicionales. Por ello, la instalaremos directamente desde _GitHub_
-
-```{r texreg, message=FALSE, include=TRUE}
-remotes::install_github("leifeld/texreg")
-library(texreg)
 ```
 
 ## 2. Cargar datos
@@ -81,7 +69,8 @@ Podemos darnos cuenta de que el set de datos presenta 71.935 observaciones (o fi
 A continuación, usaremos la función `view_df()` del paquete `sjPlot`, que presenta un resumen de las variables contenidas en el set de datos, que nos permitirá identificar la _etiqueta_ de cada variable y de cada una de sus alternativas de respuesta. 
 
 ```{r view-df, echo=TRUE, message=FALSE}
-sjPlot::view_df(datos)
+sjPlot::view_df(datos,
+                encoding = 'UTF-8')
 ```
 
 Podemos ver que tenemos dos variables cuantitativas (`ingresos` y `edad`), y dos variables categóricas (`sexo` y `educacion`). Estas últimas tienen 2 y 10 categorías, respectivamente. Sin embargo, en el caso de educacion, el valor `999` indica _Nivel ignorado_, es decir, valores nulos. En consideración de ello, ahora toca recodificar las variables y establecer los datatypes adecuados para poder generar el modelo de forma correcta. 
@@ -133,22 +122,7 @@ Como señalamos al inicio del práctico, la **variable dependiente** de este mod
 datos$ingresos_d <- ifelse(datos$ingresos>mean(datos$ingresos), 1, 0)
 ```
 
-
-## 6. Análisis descriptivos
-
-Una vez que tengamos recodificadas las variables, debemos proceder con un análisis descriptivo de los datos. Para ello, emplaremos la función `dfSummary()` de la librería `summarytools`, que nos permite crear una tabla descriptiva para todas las variables de nuestro set de datos.
-
-```{r descriptivo-print, echo=T, message=F, include=F}
-print(dfSummary(datos, headings = FALSE, method = "render")) #Visualización en consola
-```
-
-```{r descriptivo-view, echo=T, message=FALSE}
-view(dfSummary(datos, headings = FALSE, method = "render")) #Formato HTML
-```
-
-Podemos ver que la media de la variable `ingresos` es 162.615.6. Asimismo, las categorías con mayor frecuencia en `educacion` son Educación primaria (30.4%) y Educación secundaria (36.2%). En la muestra, por otra parte, hay más mujeres (53%) que hombres (47%). Por su parte, la media de `edad` son 39.3 años. Por último, el 75.9% de las personas tiene ingresos menores o iguales al ingreso medio, mientras que un 24.1% percibe ingresos superiores al ingreso medio. 
-
-## 7. Creación del modelo
+## 6. Creación del modelo
 
 Una vez realizado lo anterior, es momento de generar nuestro modelo de regresión logística. Emplearemos la función `glm()` del paquete base de `R`, especificando el argumento `family` como `"binomial"`. Lo primero es especificar las variables con las cuales construiremos el modelo: antes de la virgulilla (~) escribiremos nuestra variable dependiente (en este caso, `ingresos_d`), y luego, las variables independientes (aquí, `educacion`, `sexo` y `edad`), separadas con un signo más (+).
 
@@ -157,9 +131,9 @@ Una vez realizado lo anterior, es momento de generar nuestro modelo de regresió
 modelo <- glm(ingresos_d~educacion+sexo+edad, data = datos, family = "binomial")
 ```
 
-Como podemos ver, se ha creado en nuestro entorno (Environment) un objeto llamado `modelo`. Sin embargo, así como está el objeto no nos provee de información útil, por lo que emplearemos el paquete `texreg` para visualizarlo.
+Como podemos ver, se ha creado en nuestro entorno (Environment) un objeto llamado `modelo`. Sin embargo, así como está el objeto no nos provee de información útil, por lo que emplearemos el paquete `sjPlot` para visualizarlo.
 
-## 8. Visualización del modelo
+## 7. Visualización del modelo
 
 A continuación, visualizaremos el modelo con el comando `tab_model()` de la librería `sjPlot`. Por defecto, para las medidas de ajuste, se presenta el R^^2 de Tjur (Pseudo-R^^2)
 
@@ -172,33 +146,27 @@ sjPlot::tab_model(modelo,
                   string.est = "β")
 ```
 
-También es posible visualizar los modelos con el comando `htmlreg()` del paquete `texreg`, que genera una tabla en formato HTML.
-
-```{r tabla-html, results= 'asis', echo=T, message=F}
-htmlreg(modelo)
-```
-
-Para el caso de las variables categóricas (que han sido transformadas a tipo `factor`), R toma como categoría de referencia al primer nivel (`level`) de la variable. En el caso de de `educacion`, por ejemplo, la categoría de referencia es _Nunca estudió_; y para `sexo`, la categoría de referencia es _Hombre_. Sin embargo, podemos emplear la función `relevel` para establecer una nueva categoría de referencia para una variable en particular. Probemos estableciendo la categoría _Mujer_ como la referencia para la variable `sexo`:
+Para el caso de las variables categóricas (que han sido transformadas a tipo `factor`), R toma como categoría de referencia al primer nivel (`level`) de la variable. En el caso de `educacion`, por ejemplo, la categoría de referencia es _Nunca estudió_; y para `sexo`, la categoría de referencia es _Hombre_. Sin embargo, podemos emplear la función `relevel` para establecer una nueva categoría de referencia para una variable en particular. Probemos estableciendo la categoría _Mujer_ como la referencia para la variable `sexo`:
 
 ```{r relevel, echo=TRUE}
 datos$sexo <- relevel(datos$sexo, ref = 'Mujer')
 ```
 
-Volvemos a generar y visualizar el modelo, creando un nuevo objeto llamado `modelo_r`, y visualizando ambos con `htmlreg()`
+Volvemos a generar y visualizar el modelo, creando un nuevo objeto llamado `modelo_r`, y visualizando ambos con `tab_model()`
 
 ```{r modelo-relevel, results= 'asis', echo=T, message=F}
 modelo_r <- glm(ingresos_d~educacion+sexo+edad, data = datos, family = "binomial")
 sjPlot::tab_model(list(modelo, modelo_r), 
                   show.ci=FALSE, 
                   p.style = "stars", 
-                  dv.labels = "Modelo",
-                  string.pred = "Predictores", 
+                  dv.labels = c("Modelo", "Modelo (Relevel)"),
+                                string.pred = "Predictores", 
                   string.est = "β")
 ```
 
 Podemos darnos cuenta de que el _output_ de este código incluye a ambos modelos, uno junto a otro. Las tablas generadas con `tab_model()` incluyen cada uno de los coeficientes y sus niveles de significancia estadística (señalados con asteriscos *), así como el pseudo R^^2 de Tjur.
 
-## 11. Exponenciación de los coeficientes
+## 8. Exponenciación de los coeficientes
 
 No obstante, por defecto el comando `tab_model()` arroja los coeficientes como **logaritmos de las chanches** (Log-odds), lo cual dificulta la interpretación de los coeficientes. Para que el output de la tabla se presente como **Odds-ratio**, debemos especificar el argumento `transform = "exp"` 
 
@@ -208,7 +176,7 @@ sjPlot::tab_model(modelo,
                   transform = "exp",
                   show.ci=FALSE,
                   p.style = "stars",
-                  dv.labels = c("Modelo"," Modelo (OR)"),
+                  dv.labels = "Modelo (OR)",
                   string.pred = "Predictores",
                   string.est = "β")
 ```
@@ -217,10 +185,13 @@ También podemos graficar la significancia estadística de nuestros coeficientes
 
 ```{r plot-sig, echo=T}
 plot_model(modelo,
+           ci.lvl = (0.95),
+           title = "Estimación de predictores",
+           vline.color = "purple",
            show.values = TRUE)+ 
   theme_sjplot()
 ```
 
-## 10. Medidas de ajuste
+## 9. Medidas de ajuste
 
-## 11. Resumen
+## 10. Resumen
