@@ -164,7 +164,7 @@ sjPlot::tab_model(list(modelo, modelo_r),
                   string.est = "β")
 ```
 
-Podemos darnos cuenta de que el _output_ de este código incluye a ambos modelos, uno junto a otro. Las tablas generadas con `tab_model()` incluyen cada uno de los coeficientes y sus niveles de significancia estadística (señalados con asteriscos *), así como el pseudo R^^2 de Tjur.
+Podemos darnos cuenta de que el _output_ de este código incluye a ambos modelos, uno junto a otro. Las tablas generadas con `tab_model()` incluyen cada uno de los coeficientes y sus niveles de significancia estadística (señalados con asteriscos *), así como el pseudo R^2 de Tjur.
 
 ## 8. Exponenciación de los coeficientes
 
