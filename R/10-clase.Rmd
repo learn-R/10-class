@@ -50,14 +50,16 @@ En este práctico utilizaremos seis paquetes
 
 Como en las prácticas anteriores, empleamos la función `p_load` de la librería `pacman`. También utilizamos la función `install_github()` de `remotes` para poder instalar la librería `texreg`
 
-```{r packages, include=TRUE}
+```{r packages, include=TRUE, message=F}
+remotes::install_github("leifeld/texreg", force = T)
+
 pacman::p_load(sjPlot, 
                tidyverse, 
                srvyr,
                survey,
-               remotes)
+               remotes,
+               texreg)
 
-remotes::install_github("leifeld/texreg", force = T)
 ```
 
 ## 2. Cargar datos
@@ -65,7 +67,7 @@ remotes::install_github("leifeld/texreg", force = T)
 Como se señaló anteriormente, en este práctico se trabajará con los datos de la **Encuesta Suplementaria de Ingresos (ESI)** en su versión 2020. Esta se encuentra en la carpeta "input/data", en formato .rds, habiendo sido procesada anteriormente. Por ello, empleamos la función `readRDS()` de la librería `base` de R.
 
 ```{r readRDS, echo=TRUE}
-datos <- readRDS("input/data/data_proc.rds")
+datos <- readRDS("../input/data/data_proc.rds")
 ```
 
 Podemos darnos cuenta de que el set de datos presenta 26.821 observaciones (o filas), y 7 variables (o columnas), que incluyen a las variables `ing_t_t`,, `edad`, `sexo`, `est_conyugal`, `ciuo08`, `fact_cal_esi` y `ing_medio`. Esta última discrimina si el sujeto presenta ingresos mayores o iguales (1) a la media de `ing_t_t` o no (0). Para mayor detalle, revisar el script `proc.R` ubicado en la carpeta `R`, para profundizar en el tratamiento de los datos. 
@@ -76,7 +78,7 @@ A continuación, usaremos la función `view_df()` del paquete `sjPlot`, que pres
 
 ```{r view-df, echo=TRUE, message=FALSE}
 sjPlot::view_df(datos,
-                encoding = 'UTF-8')
+                encoding = 'latin9')
 ```
 
 Podemos ver que tenemos tres variables cuantitativas (`ing_t_t`, `edad` y `fact_cal_esi`), y cuatro variables categóricas (`sexo`, `est_conyugal`, `ciuo08` e `ing_medio`). Estas últimas tienen 2, 2, 10 y 2 categorías, respectivamente. 
@@ -267,12 +269,26 @@ sjPlot::tab_model(modelo3, # modelo con todas las variables
                   df.method = 'wald',
                   dv.labels = "Modelo con todas las variables", # etiquetas de modelos o variables dep.
                   string.pred = "Predictores", string.est = "β", # nombre predictores y símbolo beta en tabla
-                  encoding =  "UTF-8")
+                  encoding =  "latin9")
 ```
 
 ¡Ahora podemos interpretar los coeficientes de manera sencilla, para cada categoría de respuesta!
 
 #### Con `texreg`
+
+La segunda forma de presentar nuestro modelo de en formato tabla es con `texreg`. Hay diversas funciones:
+
+  + `screenreg()`: muestra la tabla en la consola de R.
+  + `htmlreg()`: produce una tabla en formato html. Es la que utilizaremos en este práctico. 
+  + `texreg()`: produce una tabla en formato LaTex para documentos en PDF.
+  
+Si no especificamos ningún argumento, `htmlreg()` presenta de forma directa una tabla publicable, con sus respectivas medidas de ajuste. Algo fundamental es especificar `results='asis'` en las opciones del chunk pues, de lo contrario, la tabla no aparecerá en el documento renderizado. 
+
+```{r results='asis', echo=FALSE}
+htmlreg(modelo3)
+```
+
+¡Personalicemos la tabla!
 
 ### b) Gráficos
 
@@ -285,8 +301,7 @@ sjPlot::plot_model(modelo3,
                    show.p = T,
                    show.values =  T,
                    ci.lvl = 0.95, 
-                   title = "Estimación de predictores", 
-                   axis.lim = c(-4, 102000),
+                   title = "Estimación de predictores",
                    vline.color = "green")
 ```
 
