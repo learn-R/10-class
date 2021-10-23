@@ -10,8 +10,7 @@ pacman::p_load(tidyverse,
                car,
                sjmisc,
                sjlabelled,
-               forcats,
-               svyVGAM)
+               forcats)
 
 # 2. Cargar datos ---------------------------------------------------------
 
@@ -39,7 +38,7 @@ data_p <- data_p %>%
                                     recodes = c("c('Casado/a', 'Soltero/a', 'Viudo/a', 'Separado/a de hecho o anulado/a', 'Divorciado/a') = 'Sin pareja';
                                                 c('Conviviente', 'Soltero/a') = 'Con pareja';
                                                 c('No aplica', 'No sabe', 'No responde') = NA")),
-         ing_medio = ifelse(ing_t_t >= mean(ing_t_t), 'Mayor o igual al ingreso medio', 'Menor al ingreso medio')) %>% 
+         ing_medio = ifelse(ing_t_t >= mean(ing_t_t), 1, 0)) %>% 
   na.omit(.)
 
 

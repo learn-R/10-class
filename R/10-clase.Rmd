@@ -18,40 +18,46 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 0. Objetivos del práctico
 
-Este práctico tiene por objetivo presentar cómo crear modelos de regresión logística en R, con predictores categóricos y cuantitativos; cómo exponenciar los coeficientes para facilitar su interpretación; y, por último, herramientas de visualización de los modelos generados. 
+Este práctico tiene por objetivo presentar cómo crear modelos de regresión logística - con y sin consideración de diseño muestral - en R, con predictores categóricos y cuantitativos; cómo exponenciar los coeficientes para facilitar su interpretación; y, por último, herramientas de visualización de los modelos generados (sobre todo con `texreg`). 
 
 ## 1. Recursos del práctico
 
 Este práctico fue elaborado con datos de la [**Encuesta Suplementaria de Ingresos (ESI)**](https://www.ine.cl/estadisticas/sociales/ingresos-y-gastos/encuesta-suplementaria-de-ingresos) en su versión 2020. Cuando trabajen con algún set de datos, nunca olviden revisar la documentación metodológica anexa, así como el [libro de códigos](https://www.ine.cl/docs/default-source/encuesta-suplementaria-de-ingresos/bbdd/manual-y-guía-de-variables/2020/personas-esi-2020.pdf?sfvrsn=f196cb4e_4) correspondiente. 
 
+Los datos ya fueron procesados anteriormente, a modo de concentrar el práctico en la creación de los modelos. Así, por ejemplo, los predictores categóricos ya fueron transformados en variables de tipo `factor`. Pueden revisar el script `proc.R` ubicado en la carpeta `R`, para profundizar en el tratamiento de los datos. 
+
 ## 2. Librerías a utilizar
 
 En este práctico utilizaremos seis paquetes
 
-1. `pacman`: este facilita y agiliza la lectura de los paquetes a utilizar en R
+1. `pacman`: este facilita y agiliza la lectura de los paquetes a utilizar en R;
 
-2. `sjmisc`: explorar datos
+2. `tidyverse`: colección de paquetes;
 
-3. `tidyverse`: colección de paquetes, del cuál utilizaremos `dplyr` y `haven`
+3. `srvyr`: para crear el objeto encuesta;
 
-4. `haven`: para transformar variables
+4. `survey`: para crear modelos incorporando el diseño muestral;
 
-5. `dplyr`: nos permite seleccionar variables de un set de datos
+5. `sjPlot`: para presentar tablas y gráficos con los modelos creados;
 
-6. `sjPlot`: para construir tablas y gráficos
+6. `remotes`: para instalar `texreg` desde GitHub;
+
+7. `texreg`: para crear tablas en formato publicable. 
 
 # Pasos del procesamiento
 
 ## 1. Cargar librerías
 
-Como en las prácticas anteriores, empleamos la función `p_load` de la librería `pacman` 
+Como en las prácticas anteriores, empleamos la función `p_load` de la librería `pacman`. También utilizamos la función `install_github()` de `remotes` para poder instalar la librería `texreg`
 
 ```{r packages, include=TRUE}
-pacman::p_load(sjmisc,
-               tidyverse,
-               haven,
-               dplyr,
-               sjPlot)
+pacman::p_load(sjPlot, 
+               tidyverse, 
+               srvyr,
+               survey,
+               remotes)
+
+remotes::install_github("leifeld/texreg", force = T)
 ```
 
 ## 2. Cargar datos
@@ -59,10 +65,10 @@ pacman::p_load(sjmisc,
 Como se señaló anteriormente, en este práctico se trabajará con los datos de la **Encuesta Suplementaria de Ingresos (ESI)** en su versión 2020. Esta se encuentra en la carpeta "input/data", en formato .rds, habiendo sido procesada anteriormente. Por ello, empleamos la función `readRDS()` de la librería `base` de R.
 
 ```{r readRDS, echo=TRUE}
-datos <- readRDS("../input/data/datos_proc.rds")
+datos <- readRDS("input/data/data_proc.rds")
 ```
 
-Podemos darnos cuenta de que el set de datos presenta 71.935 observaciones (o filas), y 4 variables (o columnas), que incluyen a las variables `ingresos`, `educacion`, `sexo` y `edad`.
+Podemos darnos cuenta de que el set de datos presenta 26.821 observaciones (o filas), y 7 variables (o columnas), que incluyen a las variables `ing_t_t`,, `edad`, `sexo`, `est_conyugal`, `ciuo08`, `fact_cal_esi` y `ing_medio`. Esta última discrimina si el sujeto presenta ingresos mayores o iguales (1) a la media de `ing_t_t` o no (0). Para mayor detalle, revisar el script `proc.R` ubicado en la carpeta `R`, para profundizar en el tratamiento de los datos. 
 
 ## 3. Explorar datos
 
@@ -73,125 +79,166 @@ sjPlot::view_df(datos,
                 encoding = 'UTF-8')
 ```
 
-Podemos ver que tenemos dos variables cuantitativas (`ingresos` y `edad`), y dos variables categóricas (`sexo` y `educacion`). Estas últimas tienen 2 y 10 categorías, respectivamente. Sin embargo, en el caso de educacion, el valor `999` indica _Nivel ignorado_, es decir, valores nulos. En consideración de ello, ahora toca recodificar las variables y establecer los datatypes adecuados para poder generar el modelo de forma correcta. 
+Podemos ver que tenemos cuatro variables cuantitativas (`ing_t_t`, `edad`, `fact_cal_esi` e `ing_medio`), y tres variables categóricas (`sexo`, `est_conyugal` y `ciuo08`). Estas últimas tienen 2, 2 y 10 categorías, respectivamente. 
 
-## 4. Transformación de variables
+## 4. Creación del modelo de regresión logística
 
-Primero, debemos cerciorarnos de que el nivel de medición corresponda con el datatype de cada columna. Para ello, emplearemos el comando `class()` del paquete `base` de R.
+### a) Modelo nulo
 
-```{r class, echo=T, include=F}
-class(datos$ingresos)
-class(datos$educacion)
-class(datos$sexo)
-class(datos$edad)
+Una vez realizado lo anterior, es momento de generar nuestro modelo de regresión logística. Emplearemos la función `glm()` del paquete base de `R`, especificando el argumento `family` como `"binomial"`. Lo primero es especificar las variables con las cuales construiremos el modelo: antes de la virgulilla (~) escribiremos nuestra variable dependiente (en este caso, `ing_medio`), y luego, las variables independientes separadas con un signo más (+). Para crear el modelo nulo, en lugar de variables predictoras, especificamos un 1. En síntesis, las diferencias entre crear un modelo de regresión lineal (como se revisó en el práctico anterior) son: 
+
+  + Se utiliza la función `glm()` en lugar de `lm()`
+  + Se especifica el argumento `family = 'binomial'`   
+
+
+```{r modelo0_sin, echo=T, message=F}
+modelo0_sin <- glm(ing_medio ~ 1,
+                  data = datos,
+                  family = 'binomial')
 ```
 
-Las variables `ingresos` y `edad` presentan un `class()` de tipo `numeric`, por lo cual no es necesario realizar modificaciones. Sin embargo, las variables `educacion` y `sexo` deben ser transformadas en `factor` para trabajar con ellas de manera adecuada. Para ello, empleamos la función `as_factor()` del paquete `haven`. Una de las ventajas de esta función es que nos permite **mantener las etiquetas** de nuestras variables.
+**Examinemos** el modelo creado:
 
-```{r factor, echo=T, include=F}
-datos$educacion <- as_factor(datos$educacion)
-class(datos$educacion)
-datos$sexo <- as_factor(datos$sexo)
-class(datos$sexo)
+```{r modelo0_sin_summary, echo=T, message=F}
+summary(modelo0_sin)
 ```
 
-## 5. Recodificaciones
+Como podemos ver, se ha creado en nuestro entorno (Environment) un objeto llamado `modelo0_sin`, que consta de una lista con 30 elementos.
 
-La variable `educacion` presenta la categoría de respuesta `Nivel ignorado`, que realmente presenta casos perdidos. Para ello, usaremos la función `recode()` de la librería `car`, para transformar tales valores en `NA`. Asimismo, se unificarán las categorías `Educación primaria (nivel 1)` y `Educación primaria (nivel 2)`; y renombraremos `Educación técnica (Educación superior no universitaria)` como `Educación técnica` para facilitar el análisis. También nos damos cuenta de que las niveles (`levels`) de la variable no están ordenados de menor a mayor nivel educacional, por lo cual utilizaremos el argumento `levels` de la función `as.factor` del paquete `base` de R, para ordenarlos de forma adecuada. 
 
-```{r recode, echo=T}
-datos$educacion <- car::recode(datos$educacion, recodes = c("'Nivel ignorado' = NA; 
-                                                  c('Educación primaria (nivel 1)', 'Educación primaria (nivel 2)') = 'Educación primaria'; 
-                                                  'Educación técnica (Educación superior no universitaria)' = 'Educación técnica'")) 
-                     
-datos$educacion <- factor(datos$educacion, levels = c('Nunca estudió', 
-                                     'Educación preescolar', 
-                                     'Educación primaria', 
-                                     'Educación secundaria', 
-                                     'Educación técnica', 
-                                     'Educación universitaria', 
-                                     'Postitulos y maestría', 
-                                     'Doctorado'))
+### b) Modelo con predictores numéricos
+
+No obstante, el modelo nulo no es interpretable. Incorporemos edad, predictor `numérico`, y revisemos el modelo estimado
+
+```{r modelo1, echo=T, message=F}
+modelo1 <- glm(ing_medio ~ edad,
+              data = datos, 
+              family = 'binomial')
+
+summary(modelo1)
 ```
 
-## 5.1. Creación de variable dependiente dicotómica
+### c) Modelo con predictores categóricos
 
-Como señalamos al inicio del práctico, la **variable dependiente** de este modelo de regresión logística será una dicotomización de la variable ingresos. Esta se construirá codificando como `1` a todas aquellas personas cuyos ingresos sean mayores a la media de ingresos, y como `0` a todas las otras personas. Para ello, emplearemos la función `ifelse()` del paquete `base` de R, a modo de generar una variable condicional a partir de lo anteriormente. Empleamos la función `factor()` para transformarla en tal tipo de dato.
+Asimismo, gran parte de las veces queremos utilizar variables categóricas (como el sexo, la ocupación o el estado conyugal de las personas) como variables predictoras: 
 
-```{r crear-dependiente, echo=T}
-datos$ingresos_d <- ifelse(datos$ingresos>mean(datos$ingresos), 1, 0)
+```{r modelo2, echo=T, message=F}
+modelo2 <- glm(ing_medio ~ sexo,
+              data = datos, 
+              family = 'binomial')
+
+summary(modelo2)
 ```
 
-## 6. Creación del modelo
+### d) Modelo completo
 
-Una vez realizado lo anterior, es momento de generar nuestro modelo de regresión logística. Emplearemos la función `glm()` del paquete base de `R`, especificando el argumento `family` como `"binomial"`. Lo primero es especificar las variables con las cuales construiremos el modelo: antes de la virgulilla (~) escribiremos nuestra variable dependiente (en este caso, `ingresos_d`), y luego, las variables independientes (aquí, `educacion`, `sexo` y `edad`), separadas con un signo más (+).
+¡Incorporemos todas las variables que seleccionamos!
 
+```{r modelo3, echo=T, message=F}
+modelo3 <- glm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
+              data = datos, 
+              family = 'binomial')
 
-```{r modelo-log, echo=T, message=F}
-modelo <- glm(ingresos_d~educacion+sexo+edad, data = datos, family = "binomial")
+summary(modelo3)
 ```
 
-Como podemos ver, se ha creado en nuestro entorno (Environment) un objeto llamado `modelo`. Sin embargo, así como está el objeto no nos provee de información útil, por lo que emplearemos el paquete `sjPlot` para visualizarlo.
+### e) Incorporando el diseño muestral 
 
-## 7. Visualización del modelo
+No obstante, como se revisó en el práctico anterior, es **fundamental** utilizar los ponderadores para estimar de forma más precisa, al incorporar el diseño muestral en el modelamiento. En aras de ello, especificamos `fact_cal_esi` (nuestro ponderador) en el argumento `weights = `
 
-A continuación, visualizaremos el modelo con el comando `tab_model()` de la librería `sjPlot`. Por defecto, para las medidas de ajuste, se presenta el R^^2 de Tjur (Pseudo-R^^2)
+```{r modelo3_dis, echo=T, message=F}
+modelo3_dis <- glm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
+              data = datos, 
+              weights = fact_cal_esi,
+              family = 'binomial')
 
-```{r tabla, results= 'asis', echo=T, message=F}
-sjPlot::tab_model(modelo, 
-                  show.ci=FALSE, 
-                  p.style = "stars", 
-                  dv.labels = "Modelo",
-                  string.pred = "Predictores", 
-                  string.est = "β")
+summary(modelo3_dis)
 ```
 
-Para el caso de las variables categóricas (que han sido transformadas a tipo `factor`), R toma como categoría de referencia al primer nivel (`level`) de la variable. En el caso de `educacion`, por ejemplo, la categoría de referencia es _Nunca estudió_; y para `sexo`, la categoría de referencia es _Hombre_. Sin embargo, podemos emplear la función `relevel` para establecer una nueva categoría de referencia para una variable en particular. Probemos estableciendo la categoría _Mujer_ como la referencia para la variable `sexo`:
+Sin embargo, como podemos darnos cuenta, el output que generamos incorporando este argumento resulta problemático, y difiere en demasía del modelo que no contempla los ponderadores en su estimación. ¿Qué podemos hacer? ¡pues recurriremos a una librería ya conocida! Nos referimos a `srvyr`, que nos permitirá crear un **objeto encuesta**
 
-```{r relevel, echo=TRUE}
-datos$sexo <- relevel(datos$sexo, ref = 'Mujer')
+```{r obj_enc, echo=T, message=F}
+esi_design <- as_survey_design(datos, 
+                               ids = 1, 
+                               weights = fact_cal_esi)
 ```
 
-Volvemos a generar y visualizar el modelo, creando un nuevo objeto llamado `modelo_r`, y visualizando ambos con `tab_model()`
+¿`srvyr` también tiene una función para crear modelos de regresión logística? Lamentablemente **no**. No obstante, y tal como se revisó en el práctico anterior, la librería ``survey` incluye la función `svyglm()`, que permite estimar modelos de diversas características, considerando el **diseño muestral** de los datos. Esto se especifica con el argumento `design =`, donde debemos especificar el objeto encuesta con que nos hallamos trabajando (es el símil de `data =` en `glm()`). 
 
-```{r modelo-relevel, results= 'asis', echo=T, message=F}
-modelo_r <- glm(ingresos_d~educacion+sexo+edad, data = datos, family = "binomial")
-sjPlot::tab_model(list(modelo, modelo_r), 
-                  show.ci=FALSE, 
-                  p.style = "stars", 
-                  dv.labels = c("Modelo", "Modelo (Relevel)"),
-                                string.pred = "Predictores", 
-                  string.est = "β")
+```{r survey_binomial, echo=T, message=F}
+modelo3_survey <- svyglm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
+                         family = 'binomial',
+                         design = esi_design)
+
+summary(modelo3_survey)
 ```
 
-Podemos darnos cuenta de que el _output_ de este código incluye a ambos modelos, uno junto a otro. Las tablas generadas con `tab_model()` incluyen cada uno de los coeficientes y sus niveles de significancia estadística (señalados con asteriscos *), así como el pseudo R^2 de Tjur.
+**Bonus**: utilizar el argumento `family = 'binomial'` arroja un mensaje de advertencia (`Warning:`) al calcular el modelo. La **documentación de `svyglm()`** indica que, para evitar esto, debemos especificar `family = 'binomial'`. Revisemos el resultado
 
-## 8. Exponenciación de los coeficientes
+```{r survey_quasibinomial, echo=T, message=F}
+modelo3_survey_q <- svyglm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
+                         family = 'quasibinomial',
+                         design = esi_design)
 
-No obstante, por defecto el comando `tab_model()` arroja los coeficientes como **logaritmos de las chanches** (Log-odds), lo cual dificulta la interpretación de los coeficientes. Para que el output de la tabla se presente como **Odds-ratio**, debemos especificar el argumento `transform = "exp"` 
-
-
-```{r tabla-odds, results= 'asis', echo=T, message=F}
-sjPlot::tab_model(modelo,
-                  transform = "exp",
-                  show.ci=FALSE,
-                  p.style = "stars",
-                  dv.labels = "Modelo (OR)",
-                  string.pred = "Predictores",
-                  string.est = "β")
+summary(modelo3_survey_q); summary(modelo3_survey)
 ```
 
-También podemos graficar la significancia estadística de nuestros coeficientes, con `plot_model()` de `sjPlot`. Por defecto, esta función presenta los coeficientes como Odds-ratio
+Si bien los valores en general son los mismos, ambos objetos no son exactamente iguales. Por ejemplo, el modelo creado con `family = 'quasibinomial'` no presenta el cálculo del Criterio de Información de Akaike (AIC), que si incluye el modelo creado con `family = 'binomial'`, y que resulta relevante para determinar el ajuste del modelo. 
 
-```{r plot-sig, echo=T}
-plot_model(modelo,
-           ci.lvl = (0.95),
-           title = "Estimación de predictores",
-           vline.color = "purple",
-           show.values = TRUE)+ 
-  theme_sjplot()
+## 5. Extracción de elementos 
+
+La extracción de elementos en modelos de regresión logística no difiere de la extracción de elementos de modelos de regresión lineal (ni de cualquier lista).
+
+**Coeficientes**:
+
+```{r coef, echo=T, message=F}
+modelo3$coefficients
 ```
 
-## 9. Medidas de ajuste
+**Sexto coeficiente** (considerando el intercepto como primero):
 
-## 10. Resumen
+```{r coef6, echo=T, message=F}
+modelo3$coefficients[6]
+```
+
+**Coeficiente de estado conyugal (sin pareja)**:
+
+```{r coef_est_conyugal, echo=T, message=F}
+modelo3$coefficients["est_conyugalSin pareja"]
+```
+
+También podemos extraer elementos de los modelos creados con `svyglm()`; por ejemplo:
+
+**Devianza**
+
+```{r survey_dev, echo=T, message=F}
+summary(modelo3_survey)$deviance
+```
+
+**Criterio de Información de Akaike (AIC)**
+
+```{r survey_aic, echo=T, message=F}
+summary(modelo3_survey)$aic
+```
+
+## 6. Presentación del modelo creado
+
+### a) Tablas 
+
+#### Con `sjPlot::tab_model()`
+
+#### Con `texreg`
+
+### b) Gráficos
+
+## 7. Resumen 
+
+# 8. Recursos
+
+- [sjPlot](https://strengejacke.github.io/sjPlot/) 
+- [tidyverse](https://www.tidyverse.org/packages/)
+
+# 9. Reporte de progreso
+
+¡Recuerda rellenar tu [reporte de progreso](). En tu correo electrónico está disponible el código mediante al cuál debes acceder para actualizar tu estado de avance del curso.
+
