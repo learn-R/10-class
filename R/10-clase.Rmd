@@ -221,6 +221,13 @@ summary(modelo3_survey)$deviance
 summary(modelo3_survey)$aic
 ```
 
+Podemos utilizar, tal como en el práctico anterior, `sjPlot::get_model_data()` para extraer los valores predichos
+
+```{r survey_pred, echo=T, message=F}
+get_model_data(modelo3_survey, 
+               type = "pred")
+```
+
 ## 6. Presentación del modelo creado
 
 ### a) Tablas 
