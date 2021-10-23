@@ -79,7 +79,7 @@ sjPlot::view_df(datos,
                 encoding = 'UTF-8')
 ```
 
-Podemos ver que tenemos cuatro variables cuantitativas (`ing_t_t`, `edad`, `fact_cal_esi` e `ing_medio`), y tres variables categóricas (`sexo`, `est_conyugal` y `ciuo08`). Estas últimas tienen 2, 2 y 10 categorías, respectivamente. 
+Podemos ver que tenemos tres variables cuantitativas (`ing_t_t`, `edad` y `fact_cal_esi`), y cuatro variables categóricas (`sexo`, `est_conyugal`, `ciuo08` e `ing_medio`). Estas últimas tienen 2, 2, 10 y 2 categorías, respectivamente. 
 
 ## 4. Creación del modelo de regresión logística
 
@@ -92,7 +92,7 @@ Una vez realizado lo anterior, es momento de generar nuestro modelo de regresió
 
 
 ```{r modelo0_sin, echo=T, message=F}
-modelo0_sin <- glm(ing_medio ~ 1,
+modelo0 <- glm(ing_medio ~ 1,
                   data = datos,
                   family = 'binomial')
 ```
@@ -100,7 +100,7 @@ modelo0_sin <- glm(ing_medio ~ 1,
 **Examinemos** el modelo creado:
 
 ```{r modelo0_sin_summary, echo=T, message=F}
-summary(modelo0_sin)
+summary(modelo0)
 ```
 
 Como podemos ver, se ha creado en nuestro entorno (Environment) un objeto llamado `modelo0_sin`, que consta de una lista con 30 elementos.
@@ -232,11 +232,64 @@ get_model_data(modelo3_survey,
 
 ### a) Tablas 
 
+En este práctico revisaremos dos maneras de presentar nuestros modelos. La primera sigue la línea de la práctica anterior, empleando `sjPlot::tab_model()`. La segunda es algo mas sofisticada: utilizaremos la librería `texreg` para presentar nuestros modelos, incorporando elementos adicionales a los coeficientes, como lo pueden ser las medidas de ajuste. 
+
 #### Con `sjPlot::tab_model()`
+
+Seguimos la misma idea del práctico anterior: 
+
+```{r tab_model, echo=T, message=F}
+sjPlot::tab_model(modelo0, 
+                  show.ci=FALSE,
+                  df.method = 'wald', #Para realizar más rápidamente el cálculo de los intervalos de confianza
+                  encoding = "latin9") #Para que reconozca el signo "¿"
+```
+
+Podemos incorporar más de un modelo de regresión a la tabla. Esto es muy útil para comparar los diversos modelos que creamos
+
+```{r tab_model2, echo=T, message=F}
+sjPlot::tab_model(list(modelo0, modelo1, modelo2), # los modelos estimados
+                  show.ci=FALSE, # no mostrar intervalo de confianza (por defecto lo hace)
+                  p.style = "stars", # asteriscos de significación estadística
+                  df.method = 'wald',
+                  dv.labels = c("Modelo 1", "Modelo 2", "Modelo 3"), # etiquetas de modelos o variables dep.
+                  string.pred = "Predictores", string.est = "β", # nombre predictores y símbolo beta en tabla
+                  encoding =  "latin9")
+```
+
+No obstante, hay algo que resulta _un poco **problemático**_: el output de `tab_model()` cuando presentamos modelos de regresión logística, por defecto, presenta los coeficientes en **log-Odds** (logaritmo de las chances). Estos valores son difícilmente interpretables. Sin embargo ¡existe una solución! Si especificamos el argumento `transform = "exp"`, el output de la tabla estará en formato **Odds ratio** (OR), lo cual permite interpretar los coeficientes de manera sencilla. 
+
+```{r tab_model3, echo=T, message=F}
+sjPlot::tab_model(modelo3, # modelo con todas las variables
+                  show.ci=FALSE, # no mostrar intervalo de confianza (por defecto lo hace)
+                  transform = 'exp', # exponenciamos los coeficientes
+                  p.style = "stars", # asteriscos de significación estadística
+                  df.method = 'wald',
+                  dv.labels = "Modelo con todas las variables", # etiquetas de modelos o variables dep.
+                  string.pred = "Predictores", string.est = "β", # nombre predictores y símbolo beta en tabla
+                  encoding =  "UTF-8")
+```
+
+¡Ahora podemos interpretar los coeficientes de manera sencilla, para cada categoría de respuesta!
 
 #### Con `texreg`
 
 ### b) Gráficos
+
+(Una vez más) tal como en el práctico anterior, utilizaremos la librería `sjPlot` para graficar nuestros modelos. En particular, su función `plot_model()` nos permitirá presentar los modelos de manera gráfica. Esta vez, no obstante, el output por defecto es en _Odds ratio_. `
+
+#### Con log-odds
+
+```{r plot_model_log, echo=T, message=F}
+sjPlot::plot_model(modelo3, 
+                   show.p = T,
+                   show.values =  T,
+                   ci.lvl = c(0.95), 
+                   title = "Estimación de predictores", 
+                   vline.color = "purple")
+```
+
+
 
 ## 7. Resumen 
 
