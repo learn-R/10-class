@@ -280,15 +280,15 @@ sjPlot::tab_model(modelo3, # modelo con todas las variables
 
 #### Con log-odds
 
-```{r plot_model_log, echo=T, message=F}
+```{r plot_model, echo=T, message=F}
 sjPlot::plot_model(modelo3, 
                    show.p = T,
                    show.values =  T,
-                   ci.lvl = c(0.95), 
+                   ci.lvl = 0.95, 
                    title = "Estimación de predictores", 
-                   vline.color = "purple")
+                   axis.lim = c(-4, 102000),
+                   vline.color = "green")
 ```
-
 
 
 ## 7. Resumen 
