@@ -9,15 +9,15 @@ pacman::p_load(sjPlot,
                srvyr,
                survey,
                magrittr,
-               remotes)
+               remotes) # Remotes una vez para descargar paquetes fuera de CRAN
 
 remotes::install_github("leifeld/texreg", force = T)
 
-options(scipen = 999)
+options(scipen = 999) # Evitar notación cientifica
 
 # 2. Cargar datos ---------------------------------------------------------
 
-datos <- readRDS("input/data/data_proc.rds")
+datos <- readRDS("../input/data/data_proc.rds")
 
 
 # 3. Explorar datos -------------------------------------------------------
@@ -29,108 +29,99 @@ head(datos)
 sjPlot::view_df(datos,
                 encoding = "UTF-8")
 
-modelo0_sin <- glm(ing_medio ~ 1,
-                  data = datos,
-                  family = 'binomial')
 
-summary(modelo0_sin)
+# 4. Crear modelos --------------------------------------------------------
 
+# Modelo nulo -------------------------------------------------------------
 modelo0 <- glm(ing_medio ~ 1,
               data = datos, 
               weights = fact_cal_esi,
-              family = 'binomial')
+              family = binomial(link = "logit"))
 
 summary(modelo0)
-
+# No asustarse con los warning
 
 summary(modelo0);summary(modelo0_sin)
 
+
+# Modelo con 1 predictor --------------------------------------------------
 modelo1 <- glm(ing_medio ~ edad,
               data = datos, 
               weights = fact_cal_esi,
-              family = 'binomial')
+              family = binomial(link = "logit"))
 
 summary(modelo1)
 
-modelo2_sin <- glm(ing_medio ~ sexo,
-                  data = datos, 
-                  weights = fact_cal_esi,
-                  family = 'binomial')
 
-summary(modelo2_sin)
+# Predictores categoricos -------------------------------------------------
 
+## Pregunta: ¿que deberiamos hacer antes de ...?
 modelo2 <- glm(ing_medio ~ sexo,
               data = datos, 
               weights = fact_cal_esi,
-              family = 'binomial')
+              family = binomial(link = "logit"))
 
 summary(modelo2)
 
-modelo3 <- glm(ing_medio ~ ciuo08,
+
+
+# Modelo con todos los predictores ----------------------------------------
+modelo3 <- glm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
               data = datos, 
               weights = fact_cal_esi,
-              family = 'binomial')
+              family = binomial(link = "logit"))
 
 summary(modelo3)
 
-modelo4 <- glm(ing_medio ~ est_conyugal,
-              data = datos, 
-              weights = fact_cal_esi,
-              family = 'binomial')
 
-summary(modelo4)
-
-modelo5 <- glm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
-              data = datos, 
-              weights = fact_cal_esi,
-              family = 'binomial')
-
-summary(modelo5)
-
+# Con survey --------------------------------------------------------------
 esi_design <- as_survey_design(datos, 
                                ids = 1, 
                                weights = fact_cal_esi)
 
-modelo5_survey <- svyglm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
-                         family = 'binomial',
+modelo3_survey <- svyglm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
+                         family = binomial(link = "logit"),
                          design = esi_design)
 
-summary(modelo5_survey)
-
-modelo5_survey_q <- svyglm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
-                         family = 'quasibinomial',
-                         design = esi_design)
-
-summary(modelo5_survey);summary(modelo5_survey_q)
-
-str(modelo5)
+summary(modelo3_survey)
 
 
 
-modelo5_survey$coefficients
-modelo5_survey$coefficients[2]
-modelo5_survey$coefficients["edad"]
+# Extraer objetos ---------------------------------------------------------
+modelo3_survey$coefficients
+modelo3_survey$coefficients[2]
+modelo3_survey$coefficients["edad"]
 
-str(summary(modelo5_survey))
+str(summary(modelo3_survey))
 
-summary(modelo5_survey)$deviance
-summary(modelo5_survey)$aic
+summary(modelo3_survey)$deviance
+summary(modelo3_survey)$aic
 
-modelo5_survey$fitted.values
+modelo3_survey$fitted.values
 
-get_model_data(modelo5_survey, 
-               type = "pred")
 
-get_model_data(modelo5_survey, 
-               type = "pred", 
-               terms = "sexo")
 
-print <- broom::augment(modelo5_survey) 
+# Exponenciacion ----------------------------------------------------------
+#exp() exponenciar
 
-tab_df(print, file = "output/data/modelo.doc")
+# OR de edad
+exp(modelo3_survey$coefficients["edad"]) 
 
-head(print)
 
+# Crear OR ----------------------------------------------------------------
+modelo3_survey$or <- exp(modelo3_survey$coefficients) 
+
+#Comprobemos
+modelo3_survey$or["edad"]
+modelo3_survey$coefficients["edad"]
+
+
+# Probabilidades ----------------------------------------------------------
+#p = or / (1+or)
+
+## Ejercicio: ¿Como se podria calcular?
+
+# Presentacion de resultados ------------------------------------------------------------------
 sjPlot::tab_model(objeto_creado, 
                   show.ci= F/T,  # este argumento muestra los intervalos de confianza
                   show.p = F/T, #Este argumento muestra los valores p
@@ -166,3 +157,6 @@ sjPlot::plot_model(modelo5,
                    ci.lvl = c(0.95), 
                    title = "Estimación de predictores", 
                    vline.color = "purple")
+
+
+# ¿Y lo de texreg?
