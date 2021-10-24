@@ -18,7 +18,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## 0. Objetivos del práctico
 
-Este práctico tiene por objetivo presentar cómo crear modelos de regresión logística - con y sin consideración de diseño muestral - en R, con predictores categóricos y cuantitativos; cómo exponenciar los coeficientes para facilitar su interpretación; y, por último, herramientas de visualización de los modelos generados (sobre todo con `texreg`). 
+Este práctico tiene por objetivo presentar cómo crear modelos de regresión logística - con y sin consideración de diseño muestral - en R, con predictores categóricos y cuantitativos; cómo exponenciar los coeficientes para facilitar su interpretación; y, por último, herramientas de visualización de los modelos generados (sobre todo con `texreg`). Por supuesto, seguimos en el proceso de **análisis de datos**
+
+![](https://github.com/learn-R/slides/raw/main/img/01/flow-rproject.png)
 
 ## 1. Recursos del práctico
 
@@ -83,7 +85,45 @@ sjPlot::view_df(datos,
 
 Podemos ver que tenemos tres variables cuantitativas (`ing_t_t`, `edad` y `fact_cal_esi`), y cuatro variables categóricas (`sexo`, `est_conyugal`, `ciuo08` e `ing_medio`). Estas últimas tienen 2, 2, 10 y 2 categorías, respectivamente. 
 
-## 4. Creación del modelo de regresión logística
+## 4. Creación del modelo de regresión logística binaria
+
+### La regresión logística binaria
+
+Recordemos que, en el caso de la regresión logística, el resultado predicho es el **logit** (logatirmos de los odds), siendo los **odds** una razón de probabilidades (chances). Para llegar hasta la regresión logística, debemos pasar por los odds y los odds-ratio (proporción de chances). 
+
+Las **odds** son _la probabilidad de que algo ocurra_ (por ejemplo, tener un ingreso mayor o igual a la media) dividido por la probabilidad de que _no ocurra_:
+
+\begin{equation}
+\ Odds = p/1-p
+\end{equation}
+
+Odds de 1 significan chances iguales, mientras que odds inferiores a 1 son negativas, y mayores a 1, positivas. 
+
+Las **Odds ratio (OR)**, por su parte, reflejan la asociación entre las chances de dos variables dicotómicas:
+
+\begin{equation}
+\ OR = p_1/(1-p_1)/p_0/(1-p_0)
+\end{equation}
+
+Las OR permiten, entonces, presentar en _un único número_ la relación entre dos variables categóricas. Por ello, es una versión del β para **variables dependientes categóricas**. Una de las transformaciones que permite estimar una regresión con variables dependientes dicotómicas es el **logit**, **logaritmo de los odds**
+
+\begin{equation}
+\ Logit = ln(Odd) = ln(p/1-p)
+\end{equation}
+
+Mientras que en la regresión lineal múltiple es:
+
+\begin{equation}
+\widehat{Y}=b_{0} +b_{1}X +b_{2}X +b_{x}X
+\end{equation}
+
+Donde
+
+- $\widehat{Y}$ es el valor estimado/predicho de $Y$
+- $b_{0}$ es el **intercepto** de la recta (el valor de Y cuando X es 0)
+- $b_{1}$ y $b_{2}$ son los **coeficiente de regresión**, que nos dice cuánto aumenta Y por cada punto que aumenta X (pendiente)
+
+{{< div "note" >}}
 
 ### a) Modelo nulo
 
@@ -244,7 +284,7 @@ Seguimos la misma idea del práctico anterior:
 sjPlot::tab_model(modelo0, 
                   show.ci=FALSE,
                   df.method = 'wald', #Para realizar más rápidamente el cálculo de los intervalos de confianza
-                  encoding = "latin9") #Para que reconozca el signo "¿"
+                  encoding = "UTF-8") 
 ```
 
 Podemos incorporar más de un modelo de regresión a la tabla. Esto es muy útil para comparar los diversos modelos que creamos
@@ -256,7 +296,7 @@ sjPlot::tab_model(list(modelo0, modelo1, modelo2), # los modelos estimados
                   df.method = 'wald',
                   dv.labels = c("Modelo 1", "Modelo 2", "Modelo 3"), # etiquetas de modelos o variables dep.
                   string.pred = "Predictores", string.est = "β", # nombre predictores y símbolo beta en tabla
-                  encoding =  "latin9")
+                  encoding =  "UTF-8")
 ```
 
 No obstante, hay algo que resulta _un poco **problemático**_: el output de `tab_model()` cuando presentamos modelos de regresión logística, por defecto, presenta los coeficientes en **log-Odds** (logaritmo de las chances). Estos valores son difícilmente interpretables. Sin embargo ¡existe una solución! Si especificamos el argumento `transform = "exp"`, el output de la tabla estará en formato **Odds ratio** (OR), lo cual permite interpretar los coeficientes de manera sencilla. 
@@ -266,13 +306,26 @@ sjPlot::tab_model(modelo3, # modelo con todas las variables
                   show.ci=FALSE, # no mostrar intervalo de confianza (por defecto lo hace)
                   transform = 'exp', # exponenciamos los coeficientes
                   p.style = "stars", # asteriscos de significación estadística
-                  df.method = 'wald',
+                  df.method = 'wald', #Para realizar más rápidamente el cálculo de los intervalos de confianza
                   dv.labels = "Modelo con todas las variables", # etiquetas de modelos o variables dep.
                   string.pred = "Predictores", string.est = "β", # nombre predictores y símbolo beta en tabla
                   encoding =  "latin9")
 ```
 
 ¡Ahora podemos interpretar los coeficientes de manera sencilla, para cada categoría de respuesta!
+
+¿Y si queremos integrar el **diseño muestral**?
+
+```{r tab_model3_survey, echo=T, message=F}
+sjPlot::tab_model(modelo3_survey, # modelo con todas las variables
+                  show.ci=FALSE, # no mostrar intervalo de confianza (por defecto lo hace)
+                  transform = 'exp', # exponenciamos los coeficientes
+                  p.style = "stars", # asteriscos de significación estadística
+                  df.method = 'wald',#Para realizar más rápidamente el cálculo de los intervalos de confianza
+                  dv.labels = "Modelo con todas las variables", # etiquetas de modelos o variables dep.
+                  string.pred = "Predictores", string.est = "β", # nombre predictores y símbolo beta en tabla
+                  encoding =  "UTF-8")
+```
 
 #### Con `texreg`
 
@@ -284,11 +337,41 @@ La segunda forma de presentar nuestro modelo de en formato tabla es con `texreg`
   
 Si no especificamos ningún argumento, `htmlreg()` presenta de forma directa una tabla publicable, con sus respectivas medidas de ajuste. Algo fundamental es especificar `results='asis'` en las opciones del chunk pues, de lo contrario, la tabla no aparecerá en el documento renderizado. 
 
-```{r results='asis', echo=FALSE}
-htmlreg(modelo3)
+```{r htmlreg, results='asis'}
+htmlreg(modelo3, doctype = F)
 ```
 
-¡Personalicemos la tabla!
+¡Podemos incluir más de un modelo!
+
+```{r htmlreg_list, results='asis'}
+htmlreg(l = list(modelo3, modelo3_survey))
+```
+
+A diferencia de `tab_model()`, `htmlreg()` arroja, por defecto, los coeficientes en log-odds. Podemos realizar la transformación a OR de la siguiente manera, recurriendo a la función `extract()` de `texreg`
+
+```{r htmlreg_exp, results='asis'}
+or <- texreg::extract(modelo3_survey) #Extraemos info del modelo 
+or@coef <- exp(or@coef) #Exponenciamos los coeficientes
+```
+
+Y ahora construimos la tabla
+
+```{r htmlreg_exp_compare, results='asis'}
+htmlreg(l = list(modelo3_survey, or))
+```
+
+¡Personalicemos la tabla! Hay diversos argumentos (especificados a continuación) que permiten incorporar diversos elementos a la tabla, como pueden ser los intervalos de confianza para cada uno de los coeficientes, titular cada uno de los modelos presentados, agregar notas al pie de la tabla, entre otros. Si les interesa profundizar en la personalización de estas tablas, pueden dirigirse a la [documentación de la función](https://www.rdocumentation.org/packages/texreg/versions/1.37.5/topics/htmlreg).
+
+```{r htmlreg_exp_custom, results='asis'}
+htmlreg(l = list(modelo3_survey, or), 
+          doctype = F, #No incluimos doctype
+          caption = "Leyenda", #Leyenda de la tabla 
+          caption.above = T, # Presentar la leyenda en la sección superior. Si = FALSE (predeterminado), la leyenda se sitúa bajo la tabla
+          custom.model.names = c("Modelo 3", "Modelo 3 (OR)"), #Personalizar los títulos de la tabla 
+          ci.force = c(TRUE,TRUE), #Presentar intervalos de confianza
+          override.coef = list(coef(modelo3_survey), or@coef), #Sobreescribir los coeficientes a partir de los coeficientes de los modelos
+          custom.note = "$^{***}$ p < 0.001; $^{**}$ p < 0.01; $^{*}$ p < 0.05 <br> Errores estándar entre paréntesis. <br> **Nota**: La significancia estadística de los coeficientes en unidades de Odds ratio está calculada en base a los valores $t$, <br> los cuales a su vez se calculan en base a $log(Odds)/SE$") #Incorporamos una nota al pie de la tabla
+```
 
 ### b) Gráficos
 
