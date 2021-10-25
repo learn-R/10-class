@@ -53,7 +53,7 @@ En este práctico utilizaremos seis paquetes
 
 Como en las prácticas anteriores, empleamos la función `p_load` de la librería `pacman`. También utilizamos la función `install_github()` de `remotes` para poder instalar la librería `texreg`
 
-```{r packages, include=TRUE, message=F}
+```{r packages, message=FALSE, warning=FALSE, include=TRUE}
 remotes::install_github("leifeld/texreg", force = T)
 
 pacman::p_load(sjPlot, 
@@ -87,6 +87,8 @@ sjPlot::view_df(datos,
 Podemos ver que tenemos tres variables cuantitativas (`ing_t_t`, `edad` y `fact_cal_esi`), y cuatro variables categóricas (`sexo`, `est_conyugal`, `ciuo08` e `ing_medio`). Estas últimas tienen 2, 2, 10 y 2 categorías, respectivamente. 
 
 ## 4. Creación del modelo de regresión logística binaria
+
+{{< div "note" >}}
 
 ### La regresión logística binaria
 
