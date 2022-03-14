@@ -85,8 +85,8 @@ summary(modelo3_survey)
 
 # Extraer objetos ---------------------------------------------------------
 modelo3_survey$coefficients
-modelo3_survey$coefficients[2]
-modelo3_survey$coefficients["edad"]
+modelo3$coefficients[6]
+modelo3$coefficients["est_conyugalSin pareja"]
 
 str(summary(modelo3_survey))
 
@@ -95,22 +95,24 @@ summary(modelo3_survey)$aic
 
 modelo3_survey$fitted.values
 
+get_model_data(modelo3_survey, 
+               type = "pred")
+
 
 
 # Exponenciacion ----------------------------------------------------------
 #exp() exponenciar
 
 # OR de edad
-exp(modelo3_survey$coefficients["edad"]) 
+exp(modelo3_survey$coefficients["est_conyugalSin pareja"])
 
 
 # Crear OR ----------------------------------------------------------------
-modelo3_survey$or <- exp(modelo3_survey$coefficients) 
+modelo3_survey$or <- exp(modelo3_survey$coefficients)
 
 #Comprobemos
-modelo3_survey$or["edad"]
-modelo3_survey$coefficients["edad"]
-
+modelo3_survey$or["est_conyugalSin pareja"]
+modelo3_survey$coefficients["est_conyugalSin pareja"]
 
 # Probabilidades ----------------------------------------------------------
 #p = or / (1+or)

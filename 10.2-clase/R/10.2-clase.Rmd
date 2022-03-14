@@ -1,11 +1,11 @@
 ---
 title: "Regresión logística"
-linktitle: "09: Regresión logística"
+linktitle: "10.2: Regresión logística"
 date: "2021-08-24"
 menu:
   example:
     parent: Ejemplos
-    weight: 10
+    weight: 11
 type: docs
 toc: yes
 editor_options: 
@@ -53,7 +53,7 @@ En este práctico utilizaremos seis paquetes
 
 Como en las prácticas anteriores, empleamos la función `p_load` de la librería `pacman`. También utilizamos la función `install_github()` de `remotes` para poder instalar la librería `texreg`
 
-```{r packages, message=FALSE, warning=FALSE, include=TRUE}
+```{r packages, include=TRUE, message=F}
 remotes::install_github("leifeld/texreg", force = T)
 
 pacman::p_load(sjPlot, 
@@ -70,7 +70,7 @@ pacman::p_load(sjPlot,
 Como se señaló anteriormente, en este práctico se trabajará con los datos de la **Encuesta Suplementaria de Ingresos (ESI)** en su versión 2020. Esta se encuentra en la carpeta "input/data", en formato .rds, habiendo sido procesada anteriormente. Por ello, empleamos la función `readRDS()` de la librería `base` de R.
 
 ```{r readRDS, echo=TRUE}
-datos <- readRDS("../input/data/data_proc.rds")
+datos <- readRDS("input/data/data_proc.rds")
 ```
 
 Podemos darnos cuenta de que el set de datos presenta 26.821 observaciones (o filas), y 7 variables (o columnas), que incluyen a las variables `ing_t_t`,, `edad`, `sexo`, `est_conyugal`, `ciuo08`, `fact_cal_esi` y `ing_medio`. Esta última discrimina si el sujeto presenta ingresos mayores o iguales (1) a la media de `ing_t_t` o no (0). Para mayor detalle, revisar el script `proc.R` ubicado en la carpeta `R`, para profundizar en el tratamiento de los datos. 
@@ -87,8 +87,6 @@ sjPlot::view_df(datos,
 Podemos ver que tenemos tres variables cuantitativas (`ing_t_t`, `edad` y `fact_cal_esi`), y cuatro variables categóricas (`sexo`, `est_conyugal`, `ciuo08` e `ing_medio`). Estas últimas tienen 2, 2, 10 y 2 categorías, respectivamente. 
 
 ## 4. Creación del modelo de regresión logística binaria
-
-{{< div "note" >}}
 
 ### La regresión logística binaria
 
@@ -428,7 +426,3 @@ En este práctico aprendimos a
 
 - [texreg](https://www.rdocumentation.org/packages/texreg/versions/1.37.5/topics/htmlreg) 
 - [survey](https://cran.r-project.org/web/packages/survey/survey.pdf)
-
-# 9. Reporte de progreso
-
-¡Recuerda rellenar tu [reporte de progreso](). En tu correo electrónico está disponible el código mediante al cuál debes acceder para actualizar tu estado de avance del curso.

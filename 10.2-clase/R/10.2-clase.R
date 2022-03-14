@@ -1,5 +1,5 @@
 
-# 09-clase: Regresión logística -------------------------------------------
+# 10-clase: Regresión logística -------------------------------------------
 
 
 # 1. Cargar librerías -----------------------------------------------------
@@ -35,8 +35,8 @@ sjPlot::view_df(datos,
 
 # Modelo nulo -------------------------------------------------------------
 modelo0 <- glm(ing_medio ~ 1,
-              data = datos, 
-              family = binomial(link = "logit"))
+               data = datos, 
+               family = binomial(link = "logit"))
 
 summary(modelo0)
 
@@ -44,8 +44,8 @@ summary(modelo0)
 
 # Modelo con 1 predictor --------------------------------------------------
 modelo1 <- glm(ing_medio ~ edad,
-              data = datos, 
-              family = binomial(link = "logit"))
+               data = datos, 
+               family = binomial(link = "logit"))
 
 summary(modelo1)
 
@@ -54,8 +54,8 @@ summary(modelo1)
 
 ## Pregunta: ¿que deberiamos hacer antes de ...?
 modelo2 <- glm(ing_medio ~ sexo,
-              data = datos, 
-              family = binomial(link = "logit"))
+               data = datos, 
+               family = binomial(link = "logit"))
 
 summary(modelo2)
 
@@ -64,8 +64,8 @@ summary(modelo2)
 # Modelo con todos los predictores ----------------------------------------
 
 modelo3 <- glm(ing_medio ~ edad + sexo + ciuo08 + est_conyugal,
-              data = datos, 
-              family = binomial(link = "logit"))
+               data = datos, 
+               family = binomial(link = "logit"))
 
 summary(modelo3)
 
@@ -85,8 +85,8 @@ summary(modelo3_survey)
 
 # Extraer objetos ---------------------------------------------------------
 modelo3_survey$coefficients
-modelo3_survey$coefficients[2]
-modelo3_survey$coefficients["edad"]
+modelo3$coefficients[6]
+modelo3$coefficients["est_conyugalSin pareja"]
 
 str(summary(modelo3_survey))
 
@@ -95,22 +95,24 @@ summary(modelo3_survey)$aic
 
 modelo3_survey$fitted.values
 
+get_model_data(modelo3_survey, 
+               type = "pred")
+
 
 
 # Exponenciacion ----------------------------------------------------------
 #exp() exponenciar
 
 # OR de edad
-exp(modelo3_survey$coefficients["edad"]) 
+exp(modelo3_survey$coefficients["est_conyugalSin pareja"])
 
 
 # Crear OR ----------------------------------------------------------------
-modelo3_survey$or <- exp(modelo3_survey$coefficients) 
+modelo3_survey$or <- exp(modelo3_survey$coefficients)
 
 #Comprobemos
-modelo3_survey$or["edad"]
-modelo3_survey$coefficients["edad"]
-
+modelo3_survey$or["est_conyugalSin pareja"]
+modelo3_survey$coefficients["est_conyugalSin pareja"]
 
 # Probabilidades ----------------------------------------------------------
 #p = or / (1+or)
@@ -164,13 +166,13 @@ or@coef <- exp(or@coef) #Exponenciamos los coeficientes
 screenreg(l = list(modelo3_survey, or))
 
 screenreg(l = list(modelo3_survey, or), 
-        doctype = F, #No incluimos doctype
-        caption = "Leyenda", #Leyenda de la tabla 
-        caption.above = T, # Presentar la leyenda en la sección superior. Si = FALSE (predeterminado), la leyenda se sitúa bajo la tabla
-        custom.model.names = c("Modelo 3", "Modelo 3 (OR)"), #Personalizar los títulos de la tabla 
-        ci.force = c(TRUE,TRUE), #Presentar intervalos de confianza
-        override.coef = list(coef(modelo3_survey), or@coef), #Sobreescribir los coeficientes a partir de los coeficientes de los modelos
-        custom.note = "$^{***}$ p < 0.001; $^{**}$ p < 0.01; $^{*}$ p < 0.05 <br> Errores estándar entre paréntesis. <br> **Nota**: La significancia estadística de los coeficientes en unidades de Odds ratio está calculada en base a los valores $t$, <br> los cuales a su vez se calculan en base a $log(Odds)/SE$") #Incorporamos una nota al pie de la tabla
+          doctype = F, #No incluimos doctype
+          caption = "Leyenda", #Leyenda de la tabla 
+          caption.above = T, # Presentar la leyenda en la sección superior. Si = FALSE (predeterminado), la leyenda se sitúa bajo la tabla
+          custom.model.names = c("Modelo 3", "Modelo 3 (OR)"), #Personalizar los títulos de la tabla 
+          ci.force = c(TRUE,TRUE), #Presentar intervalos de confianza
+          override.coef = list(coef(modelo3_survey), or@coef), #Sobreescribir los coeficientes a partir de los coeficientes de los modelos
+          custom.note = "$^{***}$ p < 0.001; $^{**}$ p < 0.01; $^{*}$ p < 0.05 <br> Errores estándar entre paréntesis. <br> **Nota**: La significancia estadística de los coeficientes en unidades de Odds ratio está calculada en base a los valores $t$, <br> los cuales a su vez se calculan en base a $log(Odds)/SE$") #Incorporamos una nota al pie de la tabla
 
 
 ## Gráficos ----------------------------------------------------------------
